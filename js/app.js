@@ -253,7 +253,21 @@ function onPdfLoadedSuccess(res, filename) {
   });
   document.getElementById('thumbnailsContainerSection').style.display = 'block';
 
-  showToast('¡Documento procesado correctamente!', 'success');
+  // Auto-generate questions based on PDF content
+  if (res.extractedText && typeof QuizGenerator !== 'undefined') {
+    const count = parseInt(document.getElementById('selectQuestionCount')?.value) || 3;
+    const generated = QuizGenerator.generateFromText(res.extractedText, res.pagesText, count);
+    if (generated && generated.length > 0) {
+      AppState.config.quizQuestions = generated;
+      renderQuizQuestionsList();
+      const statusEl = document.getElementById('quizSourceStatus');
+      if (statusEl) {
+        statusEl.innerHTML = `✅ <strong>${generated.length} preguntas</strong> generadas automáticamente a partir del contenido de tu documento.`;
+      }
+    }
+  }
+
+  showToast('¡Documento procesado y preguntas generadas del contenido!', 'success');
 }
 
 /* ==========================================================
@@ -357,6 +371,79 @@ function setupQuizBuilder() {
     });
     renderQuizQuestionsList();
   });
+
+  // Regenerate questions from PDF content
+  const btnRegen = document.getElementById('btnRegeneratePdfQuestions');
+  if (btnRegen) {
+    btnRegen.addEventListener('click', () => {
+      if (!AppState.pdfData || !AppState.pdfData.extractedText) {
+        showToast('Primero carga un documento PDF para analizar su contenido.', 'error');
+        return;
+      }
+      const count = parseInt(document.getElementById('selectQuestionCount')?.value) || 3;
+      showToast('Analizando contenido del documento...', 'info');
+      const generated = QuizGenerator.generateFromText(AppState.pdfData.extractedText, AppState.pdfData.pagesText, count);
+      if (generated && generated.length > 0) {
+        AppState.config.quizQuestions = generated;
+        renderQuizQuestionsList();
+        const statusEl = document.getElementById('quizSourceStatus');
+        if (statusEl) {
+          statusEl.innerHTML = `✅ <strong>${generated.length} preguntas</strong> generadas a partir del contenido del documento.`;
+        }
+        showToast(`¡Se han generado ${generated.length} preguntas del PDF!`, 'success');
+      }
+    });
+  }
+
+  // Toggle Gemini AI Drawer
+  const btnToggleAi = document.getElementById('btnToggleAiDrawer');
+  const aiDrawer = document.getElementById('geminiAiDrawer');
+  const inputKey = document.getElementById('inputGeminiApiKey');
+  if (inputKey) {
+    inputKey.value = localStorage.getItem('gemini_api_key') || '';
+  }
+  if (btnToggleAi && aiDrawer) {
+    btnToggleAi.addEventListener('click', () => {
+      aiDrawer.style.display = aiDrawer.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+
+  // Run Gemini AI Generation
+  const btnRunAi = document.getElementById('btnRunGeminiAi');
+  if (btnRunAi && inputKey) {
+    btnRunAi.addEventListener('click', async () => {
+      const key = inputKey.value.trim();
+      if (!key) {
+        showToast('Por favor introduce tu clave API de Gemini.', 'error');
+        return;
+      }
+      if (!AppState.pdfData || !AppState.pdfData.extractedText) {
+        showToast('Primero carga un archivo PDF para extraer su contenido.', 'error');
+        return;
+      }
+      try {
+        btnRunAi.disabled = true;
+        btnRunAi.textContent = 'Analizando con IA...';
+        localStorage.setItem('gemini_api_key', key);
+        const count = parseInt(document.getElementById('selectQuestionCount')?.value) || 3;
+        showToast('Gemini está analizando el documento...', 'info');
+        const aiQuestions = await QuizGenerator.generateWithGemini(AppState.pdfData.extractedText, key, count);
+        AppState.config.quizQuestions = aiQuestions;
+        renderQuizQuestionsList();
+        const statusEl = document.getElementById('quizSourceStatus');
+        if (statusEl) {
+          statusEl.innerHTML = `✨ <strong>${aiQuestions.length} preguntas</strong> generadas con Inteligencia Artificial (Gemini).`;
+        }
+        showToast('¡Preguntas generadas con éxito por Gemini!', 'success');
+        if (aiDrawer) aiDrawer.style.display = 'none';
+      } catch (err) {
+        showToast('Error de IA: ' + err.message, 'error');
+      } finally {
+        btnRunAi.disabled = false;
+        btnRunAi.textContent = 'Generar con IA';
+      }
+    });
+  }
 
   renderQuizQuestionsList();
 }

@@ -50,6 +50,9 @@ const PdfHandler = {
         console.warn('Could not read PDF metadata', e);
       }
 
+      // Extract text content from all pages
+      const { fullText, pagesText } = await this.extractTextContent();
+
       // Generate thumbnails for the first 12 pages (or all if fewer)
       this.thumbnails = await this.generateThumbnails(Math.min(this.numPages, 12));
 
@@ -58,12 +61,36 @@ const PdfHandler = {
         title: title,
         numPages: this.numPages,
         fileSize: arrayBuffer.byteLength,
-        thumbnails: this.thumbnails
+        thumbnails: this.thumbnails,
+        extractedText: fullText,
+        pagesText: pagesText
       };
     } catch (err) {
       console.error('Error loading PDF document:', err);
       throw err;
     }
+  },
+
+  /**
+   * Extracts text from all pages using PDF.js
+   */
+  async extractTextContent() {
+    let fullText = '';
+    const pagesText = [];
+
+    for (let i = 1; i <= this.numPages; i++) {
+      try {
+        const page = await this.pdfDocument.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageString = textContent.items.map(item => item.str).join(' ');
+        pagesText.push({ page: i, text: pageString });
+        fullText += ' ' + pageString;
+      } catch (e) {
+        console.warn(`Error extracting text from page ${i}`, e);
+      }
+    }
+
+    return { fullText: fullText.trim(), pagesText };
   },
 
   /**
