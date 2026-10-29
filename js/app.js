@@ -15,7 +15,7 @@ const AppState = {
     description: 'Material de estudio interactivo con seguimiento de progreso para Moodle.',
     scormVersion: '1.2', // '1.2' or '2004'
     viewerMode: 'presentation', // 'presentation' or 'continuous'
-    theme: 'dark', // 'dark', 'light', 'corporate'
+    theme: 'light', // 'dark', 'light', 'corporate'
     allowDownload: false,
     
     // Completion criteria (can combine multiple or all)
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ========================================================== */
 function initTheme() {
   const themeBtn = document.getElementById('btnThemeToggle');
-  const savedTheme = localStorage.getItem('scorm_gen_theme') || 'dark';
+  const savedTheme = localStorage.getItem('scorm_gen_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
 
   if (themeBtn) {

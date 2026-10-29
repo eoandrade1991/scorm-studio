@@ -261,40 +261,40 @@ const ScormTemplates = {
    */
   getPlayerCss() {
     return `:root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --success: #059669;
+  --danger: #e11d48;
+  --warning: #d97706;
+  --radius: 10px;
+}
+
+[data-theme="dark"] {
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
   --bg-base: #0f172a;
   --bg-surface: #1e293b;
   --bg-sidebar: #111827;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: rgba(255, 255, 255, 0.1);
-  --success: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --radius: 10px;
-}
-
-[data-theme="light"] {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --bg-base: #f1f5f9;
-  --bg-surface: #ffffff;
-  --bg-sidebar: #f8fafc;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #cbd5e1;
 }
 
 [data-theme="corporate"] {
   --primary: #0284c7;
   --primary-hover: #0369a1;
-  --bg-base: #0b192c;
-  --bg-surface: #1e3e62;
-  --bg-sidebar: #000000;
-  --text-main: #ffffff;
-  --text-muted: #93c5fd;
-  --border-color: rgba(255, 255, 255, 0.15);
+  --bg-base: #f0f9ff;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #e0f2fe;
+  --text-main: #0c4a6e;
+  --text-muted: #0369a1;
+  --border-color: #bae6fd;
 }
 
 * {
