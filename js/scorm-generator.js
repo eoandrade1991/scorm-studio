@@ -38,7 +38,24 @@ const ScormGenerator = {
     zip.file('player.js', playerJs);
 
     onProgress(75, 'Configurando metadatos y actividades...');
-    const courseDataContent = `/** Course configuration generated automatically */\nconst COURSE_CONFIG = ${JSON.stringify(config, null, 2)};`;
+    // Embed pdfBase64 for full standalone offline resilience in LMS if under 12MB
+    let pdfBase64 = null;
+    if (pdfArrayBuffer.byteLength < 12 * 1024 * 1024) {
+      try {
+        const bytes = new Uint8Array(pdfArrayBuffer);
+        let binary = '';
+        const chunk = 8192;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        pdfBase64 = btoa(binary);
+      } catch (e) {
+        console.warn('Could not encode PDF to base64, using relative file instead', e);
+      }
+    }
+
+    const finalConfig = { ...config, pdfBase64: pdfBase64 };
+    const courseDataContent = `/** Course configuration generated automatically */\nconst COURSE_CONFIG = ${JSON.stringify(finalConfig, null, 2)};`;
     zip.file('course_data.js', courseDataContent);
 
     onProgress(85, 'Empaquetando documento PDF original...');

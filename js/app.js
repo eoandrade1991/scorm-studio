@@ -254,20 +254,24 @@ function onPdfLoadedSuccess(res, filename) {
   document.getElementById('thumbnailsContainerSection').style.display = 'block';
 
   // Auto-generate questions based on PDF content
-  if (res.extractedText && typeof QuizGenerator !== 'undefined') {
+  if (typeof QuizGenerator !== 'undefined') {
     const count = parseInt(document.getElementById('selectQuestionCount')?.value) || 3;
-    const generated = QuizGenerator.generateFromText(res.extractedText, res.pagesText, count);
+    const generated = QuizGenerator.generateFromText(res.extractedText || '', res.pagesText || [], count);
     if (generated && generated.length > 0) {
       AppState.config.quizQuestions = generated;
       renderQuizQuestionsList();
       const statusEl = document.getElementById('quizSourceStatus');
       if (statusEl) {
-        statusEl.innerHTML = `✅ <strong>${generated.length} preguntas</strong> generadas automáticamente a partir del contenido de tu documento.`;
+        if (res.extractedText && res.extractedText.length > 40) {
+          statusEl.innerHTML = `✅ <strong>${generated.length} preguntas</strong> generadas automáticamente analizando el texto del documento.`;
+        } else {
+          statusEl.innerHTML = `✅ <strong>${generated.length} preguntas</strong> listas para tu curso (puedes personalizarlas o regenerarlas).`;
+        }
       }
     }
   }
 
-  showToast('¡Documento procesado y preguntas generadas del contenido!', 'success');
+  showToast('¡Documento procesado correctamente!', 'success');
 }
 
 /* ==========================================================
@@ -621,9 +625,10 @@ function launchInteractivePreview() {
     GetDiagnostic: () => "OK"
   };
 
-  // Build temporary object URL for the PDF
-  const pdfBlob = new Blob([AppState.PdfHandler ? AppState.PdfHandler.currentPdfArrayBuffer : PdfHandler.currentPdfArrayBuffer], { type: 'application/pdf' });
-  const pdfUrl = URL.createObjectURL(pdfBlob);
+  // Pass in-memory cloned bytes to window.PREVIEW_PDF_BYTES so iframe reads with 0 network/CORS issues
+  if (PdfHandler.currentPdfArrayBuffer && PdfHandler.currentPdfArrayBuffer.byteLength > 0) {
+    window.PREVIEW_PDF_BYTES = new Uint8Array(PdfHandler.currentPdfArrayBuffer.slice(0));
+  }
 
   // Generate preview HTML string
   let html = ScormTemplates.getPlayerHtml(AppState.config);
@@ -635,9 +640,17 @@ function launchInteractivePreview() {
   html = html.replace('<link rel="stylesheet" href="player.css">', `<style>${css}</style>`);
   html = html.replace('<script src="course_data.js"></script>', `<script>${courseData}</script>`);
   html = html.replace('<script src="player.js"></script>', `<script>${playerJs}</script>`);
-  html = html.replace("const url = 'document.pdf';", `const url = '${pdfUrl}';`);
 
   iframe.srcdoc = html;
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.dispatchEvent(new Event('resize'));
+        }
+      } catch (e) {}
+    }, 250);
+  };
 }
 
 /* ==========================================================
